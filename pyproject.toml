@@ -77,7 +77,7 @@ dev-dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["act_bench"]
+include = ["act_bench*"]
 
 [tool.ruff]
 exclude = [".git", ".mypy_cache", ".ruff_cache", ".venv", "third_party"]
