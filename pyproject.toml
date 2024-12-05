@@ -65,6 +65,7 @@ dependencies = [
     "tomli==2.0.1",
     "torch-tb-profiler==0.4.3",
     "wandb>=0.18.7",
+    "pandera>=0.21.1",
 ]
 
 [tool.uv]
