@@ -6,9 +6,21 @@ This repository contains the codebase for evaluating action controllability of y
 
 ![overview](assets/overview.png)
 
-## Prerequisites
+## Get Started
 
-To start with, you have to download the benchmark dataset from [somewhere](...), and put it in the `data/` directory.
+To begin with, you have to download the benchmark dataset from [somewhere](...), and put it in the `data/` directory.
+
+```bash
+git clone https://github.com/turingmotors/ACT-Bench.git
+cd ACT-Bench
+
+# Install dependencies via uv
+uv sync
+# Or, via pip
+pip install -e .
+
+source .venv/bin/activate
+```
 
 ## Evaluate Action Controllability
 
@@ -16,6 +28,9 @@ To start with, you have to download the benchmark dataset from [somewhere](...),
 
 Put your generated videos in `generated_videos/<your_model_name>/`.
 The number of mp4 files in the directory must be the same as the number of samples in the benchmark dataset, which is 2286.
+
+**TODO**: Create a script and provide instructions for generating videos using the benchmark dataset.
+Note that `instruction_trajs` may not be directly usable as-is; you will need to tailor it to match the input format required by specific world models.
 
 ### 2. Compute Scores
 
