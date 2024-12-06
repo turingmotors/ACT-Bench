@@ -18,10 +18,9 @@ from torch import Tensor, nn
 from torch.utils.data import DataLoader, Dataset
 from torchvision.io import read_video
 from tqdm import tqdm as stqdm
-from transformers import set_seed
+from transformers import AutoModel, set_seed
 
 from act_bench.metrics import average_displacement_error, final_displacement_error
-from act_bench.model import VideoActionEstimator
 from act_bench.utils import send_batch_to
 
 tqdm = partial(stqdm, dynamic_ncols=True)
@@ -29,8 +28,7 @@ np.set_printoptions(precision=4, suppress=True)
 
 DATASET_DIR = "/data/dataset/wmbench/action_alignment_dataset/v20241112"
 ACT_BENCH_DATA_PATH = Path("/home/keishi_ishihara/workspace/wmbench/act_bench/data")
-CHECKPOINT_PATH = Path(__file__).parents[1] / "tmp/checkpoints/pytorch_model.pt"
-SEED = 42
+SEED = 42  # do not change this for reproducibility
 
 
 @dataclass
@@ -95,20 +93,6 @@ class DataSchema(pa.DataFrameModel):
     video_path: Series[str]
 
 
-def from_checkpoint(checkpoint_path: str, num_classes: int, num_frames: int, device: torch.device) -> nn.Module:
-    state_dict = torch.load(checkpoint_path, weights_only=True)
-    model = VideoActionEstimator(
-        input_shape=(3, num_frames, 224, 224),
-        num_classes=num_classes,
-        max_seq_len=num_frames,
-        timestamp_dim=1,
-    )
-    model.load_state_dict(state_dict)
-    model.to(device)
-    model.eval()
-    return model
-
-
 @pa.check_types
 def prepare_data(config: ActBenchConfig, allow_missing_videos: bool = False) -> DataSchema:
     # Load Act-Bench dataset
@@ -147,6 +131,7 @@ def prepare_data(config: ActBenchConfig, allow_missing_videos: bool = False) -> 
     df_video = pd.DataFrame({"video_path": sorted(config.input_dir.resolve().glob("*.mp4"))})
     df_video["sample_id"] = df_video.video_path.apply(lambda x: re.search(r"_(\d+)$", x.stem).group(1)).astype(int)
 
+    # Merge generated videos paths to act_bench dataset
     if allow_missing_videos:
         df_act_bench = df_act_bench.merge(df_video, how="right", left_on="sample_id", right_on="sample_id")
     else:
@@ -273,7 +258,9 @@ def compute_score(config: ActBenchConfig) -> ActBenchResults:
 
     # Load model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = from_checkpoint(CHECKPOINT_PATH, len(config.labels), config.num_frames, device)
+    model = AutoModel.from_pretrained("turing-motors/Act-Estimator", trust_remote_code=True)
+    model.to(device)
+    model.eval()
 
     # Prepare inputs
     df_inputs: DataSchema = prepare_data(config, allow_missing_videos=False)
@@ -356,7 +343,6 @@ def compute_score(config: ActBenchConfig) -> ActBenchResults:
         fde_per_cond_class[label] = df_subset.fde.mean().item()
 
     summary = {
-        "checkpoint_path": str(CHECKPOINT_PATH),
         "number_of_samples": len(df_results),
         "number_of_samples_per_action_class": df_results.cond_label.value_counts().sort_index().to_dict(),
         "instruction_fidelity": {"recall": accuracy_per_cond_class, "accuracy": acc},
