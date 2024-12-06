@@ -36,7 +36,7 @@ dependencies = [
     "torch>=2.4.1",
     "torchvision>=0.19.1",
     "tqdm>=4.66.5",
-    "transformers==4.39.3",
+    "transformers>=4.47.0",
     "xformers>=0.0.28.post1",
     "huggingface-hub==0.25.1",
     "more-itertools==10.3.0",
