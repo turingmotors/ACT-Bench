@@ -30,12 +30,13 @@ The number of mp4 files in the directory must be the same as the number of sampl
 **TODO**: Create a script and provide instructions for generating videos using the benchmark dataset.
 Note that `instruction_trajs` may not be directly usable as-is; you will need to tailor it to match the input format required by specific world models.
 
-### 2. Compute Scores
+### 2. Compute Scores with ACT-Estimator
 
 ```bash
-cd wmbench/act_bench
-python compute_score.py --input_dir generated_videos/<your_model_name> --output_dir results/<your_model_name>
+python run_benchmark.py --input_dir generated_videos/<your_model_name> --output_dir results/<your_model_name>
 ```
+
+See `python run_benchmark.py --help` for more details.
 
 Or, you can write a script to evaluate your generated videos:
 
