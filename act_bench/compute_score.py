@@ -26,9 +26,19 @@ from act_bench.utils import send_batch_to
 tqdm = partial(stqdm, dynamic_ncols=True)
 np.set_printoptions(precision=4, suppress=True)
 
-DATASET_DIR = "/data/dataset/wmbench/action_alignment_dataset/v20241112"
-ACT_BENCH_DATA_PATH = Path("/home/keishi_ishihara/workspace/wmbench/act_bench/data")
+ACT_BENCH_DATA_PATH = Path(__file__).parents[1] / "data"
 SEED = 42  # do not change this for reproducibility
+LABELS = [
+    "curving_to_left",
+    "curving_to_right",
+    "straight_constant_high_speed",
+    "straight_constant_low_speed",
+    "straight_accelerating",
+    "straight_decelerating",
+    "starting",
+    "stopping",
+    "stopped",
+]
 
 
 @dataclass
@@ -37,15 +47,11 @@ class ActBenchConfig:
     output_dir: Path = field(metadata={"help": "Output directory"})
     batch_size: int = field(default=10, metadata={"help": "Batch size"})
     num_workers: int = field(default=32, metadata={"help": "Number of workers for data loader"})
-    classification_ignore_labels: tuple = ("shifting_towards_left", "shifting_towards_right")
     overwrite: bool = field(default=False, metadata={"help": "Overwrite existing output directory"})
     verbose: bool = field(default=True, metadata={"help": "Verbose mode"})
 
     def __post_init__(self):
-        with open(Path(DATASET_DIR) / "reference_labels.json") as f:
-            reference = json.load(f)
-        self.reference_labels = reference["labels"]
-        self.labels = [l for l in self.reference_labels if l not in self.classification_ignore_labels]
+        self.labels = LABELS
         self.label_to_class_id = {l: i for i, l in enumerate(self.labels)}
         self.class_id_to_label = {i: l for i, l in enumerate(self.labels)}
         self.num_frames = 44  # (25 - 3) * 2 round
@@ -76,19 +82,7 @@ class DataSchema(pa.DataFrameModel):
     instruction_trajs: Series[list[list[list[float]]]]
     reference_traj: Series[list[list[float]]]
     reference_traj_transformed: Series[list[list[float]]]
-    cond_label: Series[str] = pa.Field(
-        isin=[
-            "curving_to_left",
-            "curving_to_right",
-            "straight_constant_high_speed",
-            "straight_constant_low_speed",
-            "straight_accelerating",
-            "straight_decelerating",
-            "starting",
-            "stopping",
-            "stopped",
-        ]
-    )
+    cond_label: Series[str] = pa.Field(isin=LABELS)
     cond_class: Series[int] = pa.Field(isin=list(range(8)))
     video_path: Series[str]
 
