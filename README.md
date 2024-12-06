@@ -1,8 +1,6 @@
 # ACT-Bench
 
-This repository contains the codebase for evaluating action controllability of your world model with ACT-Bench.
-
-## Overview
+ACT-Bench is a dedicated framework for quantitatively evaluating the action controllability of world models for autonomous driving. It focuses on measuring how well a world model can generate driving scenes conditioned on specified trajectories.
 
 ![overview](assets/overview.png)
 
@@ -48,7 +46,9 @@ config = ActBenchConfig(
     input_dir="generated_videos/<your_model_name>",
     output_dir="results/<your_model_name>",
 )
-compute_score(config)
+results = compute_score(config)
+print(f"Accuracy: {results.accuracy*100:.2f}%")
+print(f"Mean ADE: {results.ade:.4f}, Mean FDE: {results.fde:.4f}")
 ```
 
 ## Reproduce Numbers in the Paper
@@ -65,3 +65,11 @@ The scores of the paper can be reproduced by running the following command:
 ```
 
 Also, a notebook example is provided to reproduce the numbers: [compute_score.ipynb](notebook/compute_score.ipynb).
+
+## Citation
+
+If any parts of our paper and code help your research, please consider citing us and giving a star to our repository.
+
+```bibtex
+comming soon
+```
