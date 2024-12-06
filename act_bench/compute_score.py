@@ -12,6 +12,7 @@ import seaborn as sns
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as T
+from datasets import load_dataset
 from pandera.typing import Series
 from sklearn.metrics import confusion_matrix
 from torch import Tensor, nn
@@ -47,7 +48,7 @@ class ActBenchConfig:
     output_dir: Path = field(metadata={"help": "Output directory"})
     batch_size: int = field(default=10, metadata={"help": "Batch size"})
     num_workers: int = field(default=32, metadata={"help": "Number of workers for data loader"})
-    overwrite: bool = field(default=False, metadata={"help": "Overwrite existing output directory"})
+    overwrite: bool = field(default=False, metadata={"help": "Overwrite existing output files"})
     verbose: bool = field(default=True, metadata={"help": "Verbose mode"})
 
     def __post_init__(self):
@@ -90,10 +91,8 @@ class DataSchema(pa.DataFrameModel):
 @pa.check_types
 def prepare_data(config: ActBenchConfig, allow_missing_videos: bool = False) -> DataSchema:
     # Load Act-Bench dataset
-    df_act_bench = pd.concat(
-        [pd.read_json(p, lines=True) for p in sorted(Path(ACT_BENCH_DATA_PATH).glob("act_bench_subset_*.jsonl"))],
-        ignore_index=True,
-    )
+    dataset = load_dataset("turing-motors/ACT-Bench", split="train")
+    df_act_bench = pd.DataFrame(dataset.to_dict())  # This may take a while
 
     # Transform reference trajectories to match the coordinate system of act-estimator
     def transform_traj(traj):
@@ -275,8 +274,6 @@ def compute_score(config: ActBenchConfig) -> ActBenchResults:
     cols = [
         "sample_id",
         "context_frames",
-        "traj",
-        "trajectories",
         "cond_label",
         "cond_class",
         "instruction_trajs",
