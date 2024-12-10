@@ -24,11 +24,14 @@ source .venv/bin/activate
 
 ### 1. Generate Videos with World Model on the Benchmark Dataset
 
+**TODO**:
+
+- [ ] Create a script and provide instructions for generating videos using the benchmark dataset.
+- [ ] Add examples of how to prepare `instruction_trajs` for terra and vista.
+
+Note that `instruction_trajs` may not be directly usable as-is; you will need to tailor it to match the input format required by specific world models.
 Put your generated videos in `generated_videos/<your_model_name>/`.
 The number of mp4 files in the directory must be the same as the number of samples in the benchmark dataset, which is 2286.
-
-**TODO**: Create a script and provide instructions for generating videos using the benchmark dataset.
-Note that `instruction_trajs` may not be directly usable as-is; you will need to tailor it to match the input format required by specific world models.
 
 ### 2. Compute Scores with ACT-Estimator
 
@@ -54,8 +57,14 @@ print(f"Mean ADE: {results.ade:.4f}, Mean FDE: {results.fde:.4f}")
 
 ## Reproduce Numbers in the Paper
 
-We provide the results of the paper in the `results/` directory as well as the generated videos in `generated_videos/`.
-The scores of the paper can be reproduced by running the following command:
+First, you have to download the generated videos from huggingface hub with the following command:
+
+```bash
+python download_generated_videos.py
+```
+
+This will download the generated videos under the `generated_videos/` directory, which are the same as the ones evaluated in our paper.
+So, the scores in the paper can be reproduced by running the following command:
 
 ```bash
 # For Terra
@@ -65,12 +74,20 @@ The scores of the paper can be reproduced by running the following command:
 ./scripts/compute_score_vista_paper.sh
 ```
 
-Also, a notebook example is provided to reproduce the numbers: [compute_score.ipynb](notebook/compute_score.ipynb).
+Also, a notebook example is also provided to reproduce the numbers: [compute_score.ipynb](notebook/compute_score.ipynb).
 
 ## Citation
 
 If any parts of our paper and code help your research, please consider citing us and giving a star to our repository.
 
 ```bibtex
-comming soon
+@misc{arai2024actbenchactioncontrollableworld,
+      title={ACT-Bench: Towards Action Controllable World Models for Autonomous Driving},
+      author={Hidehisa Arai and Keishi Ishihara and Tsubasa Takahashi and Yu Yamaguchi},
+      year={2024},
+      eprint={2412.05337},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2412.05337},
+}
 ```
