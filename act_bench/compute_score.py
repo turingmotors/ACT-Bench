@@ -269,6 +269,7 @@ def compute_score(config: ActBenchConfig) -> ActBenchResults:
 
     # Compute accuracy and plot confusion matrix
     acc = (df_inputs.cond_class == df_inputs.estimated_class).sum() / len(df_inputs)
+    acc = acc.item()
     plot_confusion_matrix(df_inputs, acc, config)
 
     cols = [
