@@ -91,7 +91,7 @@ class DataSchema(pa.DataFrameModel):
 @pa.check_types
 def prepare_data(config: ActBenchConfig, allow_missing_videos: bool = False) -> DataSchema:
     # Load Act-Bench dataset
-    dataset = load_dataset("turing-motors/ACT-Bench", split="train")
+    dataset = load_dataset("turing-motors/ACT-Bench", data_files="act_bench.jsonl", split="train")
     df_act_bench = pd.DataFrame(dataset.to_dict())  # This may take a while
 
     # Transform reference trajectories to match the coordinate system of act-estimator
