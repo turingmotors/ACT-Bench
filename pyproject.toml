@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "act-bench"
+version = "0.1.0"
+description = "Benchmarking tool for action controllability of world models"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "imageio[ffmpeg,pyav]>=2.35.1",
+    "matplotlib>=3.9.2",
+    "numpy>=2.0.2",
+    "safetensors>=0.4.5",
+    "scipy>=1.13.1",
+    "torch>=2.4.1",
+    "torchvision>=0.19.1",
+    "tqdm>=4.66.5",
+    "transformers>=4.47.0",
+    "huggingface-hub==0.25.1",
+    "pandas==2.2.2",
+    "pillow==10.4.0",
+    "ruff==0.8.0",
+    "scikit-image==0.24.0",
+    "scikit-learn==1.5.2",
+    "seaborn==0.13.2",
+    "pandera>=0.21.1",
+    "datasets>=3.1.0",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "jupyterlab>=4.2.5",
+    "ipykernel==6.29.5",
+    "ipython>=8.30.0",
+    "ipywidgets==8.1.5",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["act_bench*"]
+
+[tool.ruff]
+exclude = [".git", ".mypy_cache", ".ruff_cache", ".venv", "third_party"]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+fixable = ["ALL"]
+unfixable = []
+select = [
+    "A",  # flake8-builtin
+    "B",  # flake8-bugbear
+    "E",  # pycodestyle error
+    "F",  # Pyflakes
+    "I",  # isort
+    "N",  # pep8-naming
+    "W",  # pycodestyle warning
+    "PL",  # Pylint
+    "UP",  # pyupgrade
+]
+ignore = [
+    "B905",  # Zip-without-explicit-strict
+    "E501",  # Line too long
+    "F403",  # Unable to detect undefined names
+    "N812",  # Lowercase imported as non-lowercase
+    "N999",  # Invalid module name
+    "PLR0912",  # Too many branches
+    "PLR0913",  # Too many arguments in function definition
+    "PLR2004",  # Magic value used in comparison
+    "PLR0915",  # Too many statements
+    "PLR0402",  # Manual from import
+]
+
+[tool.ruff.format]
+quote-style = "double"
+line-ending = "auto"
