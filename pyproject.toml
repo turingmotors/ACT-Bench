@@ -27,6 +27,9 @@ dependencies = [
     "seaborn==0.13.2",
     "pandera>=0.21.1",
     "datasets>=3.1.0",
+    "pytorch-lightning>=2.4.0",
+    "einops>=0.8.0",
+    "xformers>=0.0.28.post1",
 ]
 
 [tool.uv]
