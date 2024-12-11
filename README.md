@@ -6,7 +6,7 @@ ACT-Bench is a dedicated framework for quantitatively evaluating the action cont
 
 ## Get Started
 
-To begin with, you have to download the benchmark dataset from [somewhere](...), and put it in the `data/` directory.
+To begin with, you want to setup the `ACT-Bench` by running the following commands:
 
 ```bash
 git clone https://github.com/turingmotors/ACT-Bench.git
@@ -27,11 +27,12 @@ source .venv/bin/activate
 **TODO**:
 
 - [ ] Create a script and provide instructions for generating videos using the benchmark dataset.
-- [ ] Add examples of how to prepare `instruction_trajs` for terra and vista.
+- [ ] Add examples of how to prepare `instruction_trajs` for Terra and Vista.
 
 Note that `instruction_trajs` may not be directly usable as-is; you will need to tailor it to match the input format required by specific world models.
-Put your generated videos in `generated_videos/<your_model_name>/`.
+Once videos are generated, arrange them at `generated_videos/<your_model_name>/NUSCENES_ACTION_*.mp4`.
 The number of mp4 files in the directory must be the same as the number of samples in the benchmark dataset, which is 2286.
+We also provide a script to generate videos with Terra and Vista models, see [Generate Videos with Terra](#generate-videos-with-terra).
 
 ### 2. Compute Scores with ACT-Estimator
 
@@ -75,6 +76,10 @@ So, the scores in the paper can be reproduced by running the following command:
 ```
 
 Also, a notebook example is also provided to reproduce the numbers: [compute_score.ipynb](notebook/compute_score.ipynb).
+
+## Generate Videos with Terra
+
+This section describes how to generate videos with Terra model on the benchmark dataset.
 
 ## Citation
 
