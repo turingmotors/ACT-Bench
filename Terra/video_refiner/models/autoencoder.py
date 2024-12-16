@@ -48,7 +48,7 @@ class AbstractAutoencoder(LightningModule):
             return
         elif isinstance(ckpt, str):
             ckpt = {
-                "target": "video_decoders.super_resolution.modules.checkpoint.CheckpointEngine",
+                "target": "video_refiner.modules.checkpoint.CheckpointEngine",
                 "params": {"ckpt_path": ckpt}
             }
         engine = instantiate_from_config(ckpt)
@@ -438,11 +438,11 @@ class AutoencodingEngineLegacy(AutoencodingEngine):
         ckpt_engine = kwargs.pop("ckpt_engine", None)
         super().__init__(
             encoder_config={
-                "target": "video_decoders.super_resolution.modules.diffusionmodules.model.Encoder",
+                "target": "video_refiner.modules.diffusionmodules.model.Encoder",
                 "params": ddconfig
             },
             decoder_config={
-                "target": "video_decoders.super_resolution.modules.diffusionmodules.model.Decoder",
+                "target": "video_refiner.modules.diffusionmodules.model.Decoder",
                 "params": ddconfig
             },
             **kwargs
@@ -510,7 +510,7 @@ class AutoencoderKL(AutoencodingEngineLegacy):
         super().__init__(
             regularizer_config={
                 "target": (
-                    "video_decoders.super_resolution.modules.autoencoding.regularizers.DiagonalGaussianRegularizer"
+                    "video_refiner.modules.autoencoding.regularizers.DiagonalGaussianRegularizer"
                 )
             },
             **kwargs
@@ -522,7 +522,7 @@ class AutoencoderKLModeOnly(AutoencodingEngineLegacy):
         super().__init__(
             regularizer_config={
                 "target": (
-                    "video_decoders.super_resolution.modules.autoencoding.regularizers.DiagonalGaussianRegularizer"
+                    "video_refiner.modules.autoencoding.regularizers.DiagonalGaussianRegularizer"
                 ),
                 "params": {"sample": False},
             },

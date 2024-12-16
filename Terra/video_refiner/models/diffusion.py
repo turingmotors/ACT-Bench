@@ -71,7 +71,6 @@ class DiffusionEngine(LightningModule):
             subfolder=token_decoder_config["subfolder"],
             trust_remote_code=True,
         )
-        self.enable_ema_at_token_decoding = token_decoder_config["enable_ema_at_token_decoding"]
         self.denoiser = instantiate_from_config(denoiser_config)
         self.sampler = (
             instantiate_from_config(sampler_config)
@@ -203,15 +202,9 @@ class DiffusionEngine(LightningModule):
         tokens = batch["tokens"][0]
         outputs = []
         with torch.autocast("cuda", enabled=not self.disable_first_stage_autocast):
-            if self.enable_ema_at_token_decoding:
-                with self.token_decoder.ema_scope():
-                    for token in tokens:
-                        output = self.token_decoder.decode_tokens(token, self.token_shape)
-                        outputs.append(output)
-            else:
-                for token in tokens:
-                    output = self.token_decoder.decode_tokens(token, self.token_shape)
-                    outputs.append(output)
+            for token in tokens:
+                output = self.token_decoder.decode_tokens(token, self.token_shape)
+                outputs.append(output)
         return torch.cat(outputs, dim=0)
 
     def forward(self, x: torch.Tensor, batch: dict):

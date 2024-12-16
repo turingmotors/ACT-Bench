@@ -187,4 +187,3 @@ model:
     token_decoder_config:
       repo_id: turing-motors/Terra
       subfolder: lfq_tokenizer_B_256
-      enable_ema_at_token_decoding: False
