@@ -1,6 +1,6 @@
 model:
   base_learning_rate: 1.e-5
-  target: video_decoders.super_resolution.models.diffusion.DiffusionEngine
+  target: video_refiner.models.diffusion.DiffusionEngine
   params:
     use_ema: False
     input_key: img_seq
@@ -13,14 +13,14 @@ model:
     en_and_decode_n_samples_a_time: 1
 
     denoiser_config:
-      target: video_decoders.super_resolution.modules.diffusionmodules.denoiser.Denoiser
+      target: video_refiner.modules.diffusionmodules.denoiser.Denoiser
       params:
         num_frames: *num_frames
         scaling_config:
-          target: video_decoders.super_resolution.modules.diffusionmodules.denoiser_scaling.VScalingWithEDMcNoise
+          target: video_refiner.modules.diffusionmodules.denoiser_scaling.VScalingWithEDMcNoise
 
     network_config:
-      target: video_decoders.super_resolution.modules.diffusionmodules.video_model.VideoUNet
+      target: video_refiner.modules.diffusionmodules.video_model.VideoUNet
       params:
         adm_in_channels: 768
         num_classes: sequential
@@ -44,34 +44,34 @@ model:
         action_control: False
 
     conditioner_config:
-      target: video_decoders.super_resolution.modules.encoders.modules.GeneralConditioner
+      target: video_refiner.modules.encoders.modules.GeneralConditioner
       params:
         emb_models:
           - input_key: cond_aug
             is_trainable: False
             ucg_rate: 0.0
-            target: video_decoders.super_resolution.modules.encoders.modules.ConcatTimestepEmbedderND
+            target: video_refiner.modules.encoders.modules.ConcatTimestepEmbedderND
             params:
               outdim: 256
 
           - input_key: fps_id
             is_trainable: False
             ucg_rate: 0.0
-            target: video_decoders.super_resolution.modules.encoders.modules.ConcatTimestepEmbedderND
+            target: video_refiner.modules.encoders.modules.ConcatTimestepEmbedderND
             params:
               outdim: 256
 
           - input_key: motion_bucket_id
             is_trainable: False
             ucg_rate: 0.0
-            target: video_decoders.super_resolution.modules.encoders.modules.ConcatTimestepEmbedderND
+            target: video_refiner.modules.encoders.modules.ConcatTimestepEmbedderND
             params:
               outdim: 256
 
           - input_key: cond_frames
             is_trainable: False
             ucg_rate: 0.0
-            target: video_decoders.super_resolution.modules.encoders.modules.VideoPredictionEmbedderWithEncoder
+            target: video_refiner.modules.encoders.modules.VideoPredictionEmbedderWithEncoder
             params:
               disable_encoder_autocast: True
               n_cond_frames: *num_frames
@@ -79,7 +79,7 @@ model:
               is_ae: True
 
               encoder_config:
-                target: video_decoders.super_resolution.models.autoencoder.AutoencoderKLModeOnly
+                target: video_refiner.models.autoencoder.AutoencoderKLModeOnly
                 params:
                   embed_dim: 4
                   monitor: val/rec_loss
@@ -101,16 +101,16 @@ model:
                     target: torch.nn.Identity
 
     first_stage_config:
-      target: video_decoders.super_resolution.models.autoencoder.AutoencodingEngine
+      target: video_refiner.models.autoencoder.AutoencodingEngine
       params:
         loss_config:
           target: torch.nn.Identity
         
         regularizer_config:
-          target: video_decoders.super_resolution.modules.autoencoding.regularizers.DiagonalGaussianRegularizer
+          target: video_refiner.modules.autoencoding.regularizers.DiagonalGaussianRegularizer
         
         encoder_config:
-          target: video_decoders.super_resolution.modules.diffusionmodules.model.Encoder
+          target: video_refiner.modules.diffusionmodules.model.Encoder
           params:
             attn_type: vanilla
             double_z: True
@@ -125,7 +125,7 @@ model:
             dropout: 0.0
         
         decoder_config:
-          target: video_decoders.super_resolution.modules.autoencoding.temporal_ae.VideoDecoder
+          target: video_refiner.modules.autoencoding.temporal_ae.VideoDecoder
           params:
             attn_type: vanilla
             double_z: True
@@ -141,7 +141,7 @@ model:
             video_kernel_size: [ 3, 1, 1 ]
     
     scheduler_config:
-      target: video_decoders.super_resolution.lr_scheduler.LambdaLinearScheduler
+      target: video_refiner.lr_scheduler.LambdaLinearScheduler
       params:
         warm_up_steps: [ 1000 ]
         cycle_lengths: [ 10000000000000 ]
@@ -150,7 +150,7 @@ model:
         f_min: [ 1. ]
     
     loss_fn_config:
-      target: video_decoders.super_resolution.modules.diffusionmodules.loss.StandardDiffusionLoss
+      target: video_refiner.modules.diffusionmodules.loss.StandardDiffusionLoss
       params:
         use_additional_loss: True
         offset_noise_level: 0.02
@@ -158,46 +158,33 @@ model:
         num_frames: *num_frames
 
         sigma_sampler_config:
-          target: video_decoders.super_resolution.modules.diffusionmodules.sigma_sampling.EDMSampling
+          target: video_refiner.modules.diffusionmodules.sigma_sampling.EDMSampling
           params:
             p_mean: 1.0
             p_std: 1.6
             num_frames: *num_frames
 
         loss_weighting_config:
-          target: video_decoders.super_resolution.modules.diffusionmodules.loss_weighting.VWeighting
+          target: video_refiner.modules.diffusionmodules.loss_weighting.VWeighting
 
     sampler_config:
-      target: video_decoders.super_resolution.modules.diffusionmodules.sampling.EulerEDMSampler
+      target: video_refiner.modules.diffusionmodules.sampling.EulerEDMSampler
       params:
         num_steps: 15
 
         discretization_config:
-          target: video_decoders.super_resolution.modules.diffusionmodules.discretizer.EDMDiscretization
+          target: video_refiner.modules.diffusionmodules.discretizer.EDMDiscretization
           params:
             sigma_max: 700.0
         
         guider_config:
-          target: video_decoders.super_resolution.modules.diffusionmodules.guiders.LinearPredictionGuider
+          target: video_refiner.modules.diffusionmodules.guiders.LinearPredictionGuider
           params:
             num_frames: *num_frames
             max_scale: 3.0
             min_scale: 1.5
 
     token_decoder_config:
-      target: image_tokenizers.tokenizers.lfq_tokenizer.LFQTokenizer
-      params:
-        encoder_decoder_config:
-          ch: 128
-          in_channels: 3
-          out_ch: 3
-          z_channels: 18
-          num_res_blocks: 2
-          ch_mult: [1, 1, 2, 2, 4]
-        quantizer_config:
-          dim: 18
-          codebook_size: 262144
-          batch_maximization_weight: 1.0
-          sample_minimization_weight: 1.0
-        ckpt_path: "checkpoints/image_tokenizers/huggingface/TencentARC/Open-MAGVIT2/imagenet_256_B.ckpt"
-        use_ema: True
+      repo_id: turing-motors/Terra
+      subfolder: lfq_tokenizer_B_256
+      enable_ema_at_token_decoding: False

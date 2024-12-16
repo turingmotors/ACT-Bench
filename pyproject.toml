@@ -30,6 +30,9 @@ dependencies = [
     "pytorch-lightning>=2.4.0",
     "einops>=0.8.0",
     "xformers>=0.0.28.post1",
+    "omegaconf>=2.3.0",
+    "kornia>=0.7.4",
+    "open-clip-torch>=2.29.0",
 ]
 
 [tool.uv]
