@@ -174,4 +174,4 @@ logs
 wandb
 !assets/overview.png
 .vscode/
-
+!assets/Terra_architecture.png
