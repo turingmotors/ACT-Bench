@@ -33,6 +33,7 @@ dependencies = [
     "omegaconf>=2.3.0",
     "kornia>=0.7.4",
     "open-clip-torch>=2.29.0",
+    "pydantic==2.9.2",
 ]
 
 [tool.uv]
