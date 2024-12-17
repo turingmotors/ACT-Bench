@@ -76,6 +76,7 @@ def prepare_args() -> argparse.Namespace:
         help="Whether to use vLLM implementation for faster generation."
     )
     parser.add_argument(
+
         "--world_model_name",
         type=str,
         default="world_model",
@@ -361,7 +362,7 @@ def generate_with_vllm_model_for_round(
         torch.tensor(all_outputs).view(-1).unsqueeze(0).to(input_ids.device)
     ], dim=1)
 
-
+ 
 if __name__ == "__main__":
     args = prepare_args()
 
@@ -371,6 +372,7 @@ if __name__ == "__main__":
         model = prepare_vllm_model(args.world_model_name, device)
     else:
         model = AutoModel.from_pretrained("turing-motors/Terra", subfolder=args.world_model_name, trust_remote_code=True).to(device).eval()
+
     if args.decoding_method == "video_refiner":
         video_refiner = load_video_refiner(args.video_refiner_config, args.video_refiner_weights).to(device).eval()
 
@@ -422,6 +424,21 @@ if __name__ == "__main__":
                         "penalty_alpha": args.penalty_alpha
                     }
                 )
+            output_tokens = generate_tokens_for_round(
+                round_id, 
+                model,
+                sample["instruction_trajs"],
+                input_ids,
+                args.num_overlapping_frames,
+                args.num_frames,
+                num_conditioning_frames=len(file_path_list) if round_id == 0 else args.num_overlapping_frames,
+                generation_configs={
+                    "temperature": args.temperature,
+                    "top_k": args.top_k,
+                    "top_p": args.top_p,
+                    "penalty_alpha": args.penalty_alpha
+                }
+            )
             if round_id == 0:
                 all_outputs.append(output_tokens[0])
             else:
