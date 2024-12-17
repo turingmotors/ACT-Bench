@@ -423,21 +423,6 @@ if __name__ == "__main__":
                         "penalty_alpha": args.penalty_alpha
                     }
                 )
-            output_tokens = generate_tokens_for_round(
-                round_id, 
-                model,
-                sample["instruction_trajs"],
-                input_ids,
-                args.num_overlapping_frames,
-                args.num_frames,
-                num_conditioning_frames=len(file_path_list) if round_id == 0 else args.num_overlapping_frames,
-                generation_configs={
-                    "temperature": args.temperature,
-                    "top_k": args.top_k,
-                    "top_p": args.top_p,
-                    "penalty_alpha": args.penalty_alpha
-                }
-            )
             if round_id == 0:
                 all_outputs.append(output_tokens[0])
             else:
