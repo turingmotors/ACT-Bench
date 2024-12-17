@@ -24,12 +24,9 @@ source .venv/bin/activate
 
 ### 1. Generate Videos with World Model on the Benchmark Dataset
 
-**TODO**:
-
-- [ ] Create a script and provide instructions for generating videos using the benchmark dataset.
-- [ ] Add examples of how to prepare `instruction_trajs` for Terra and Vista.
-
 Note that `instruction_trajs` may not be directly usable as-is; you will need to tailor it to match the input format required by specific world models.
+For an example, see the prepare_action() function in Terra/generate.py.
+
 Once videos are generated, arrange them at `generated_videos/<your_model_name>/NUSCENES_ACTION_*.mp4`.
 The number of mp4 files in the directory must be the same as the number of samples in the benchmark dataset, which is 2286.
 We also provide a script to generate videos with Terra and Vista models, see [Generate Videos with Terra](./Terra/README.md).

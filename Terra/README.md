@@ -37,7 +37,12 @@ cd ..
 
 To generate videos with Terra, you need to prepare data formatted in the same way as the [ACT-Bench dataset](https://huggingface.co/datasets/turing-motors/ACT-Bench). For details on the format, please refer to this [link](https://huggingface.co/datasets/turing-motors/ACT-Bench#data-fields). However, since `reference_traj` and `intrinsic` are not used, they can be omitted.
 
-All the following examples are based on the use of the ACT-Bench dataset.
+All the following examples are based on the ACT-Bench dataset. To reproduce the steps below, you must first download the [nuscenes](https://www.nuscenes.org/nuscenes) dataset and the [ACT-Bench](https://huggingface.co/datasets/turing-motors/ACT-Bench) dataset. For the ACT-Bench dataset, make sure to explicitly place the JSONL file into your local environment using the following command (replacing < /path/to > with your desired local directory):
+
+```shell
+# replace the part enclosed with '<>'
+huggingface-cli download --repo-type dataset turing-motors/ACT-Bench act_bench.jsonl --local-dir < /path/to >
+```
 
 ### Generation settings used in the paper
 
