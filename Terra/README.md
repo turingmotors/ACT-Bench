@@ -50,6 +50,8 @@ python generate.py \
 --num_frames 47
 ```
 
+Note that it takes approximately 5 minutes to generate a single sample on a single H100 80GB GPU. This means that generating videos for all 2,286 samples in the ACT-Bench dataset will take around 8 days (5 minutes/sample × 2,286 samples ÷ (60 minutes/hour × 24 hours/day)). To speed up the generation process, you can split the JSONL file into multiple parts and run the generation in parallel using multiple GPUs.
+
 ### Generation settings without Video Refiner
 
 ```shell
