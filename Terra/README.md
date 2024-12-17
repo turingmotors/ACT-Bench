@@ -22,6 +22,12 @@ source .venv/bin/activate
 cd Terra
 ```
 
+If you’d like to speed up generation, we also provide a [vLLM](https://docs.vllm.ai/en/latest/) implementation that was used to produce the results reported in the paper. To use the vLLM implementation, install vLLM with the following command:
+
+```shell
+uv pip install vllm==0.6.3.post1
+```
+
 ## Download pre-trained weights
 
 Pre-trained weights of the Image Tokenizer and the Autoregressive Transformer will be automatically downloaded from [Hugging Face repository](https://huggingface.co/turing-motors/Terra) when you run `generate.py`, so no special preparation is required if you just want to try running it. However, if you plan to use the Video Refiner for generation, you will need to download the weights separately. Please follow the steps below to download it.
@@ -44,7 +50,7 @@ All the following examples are based on the ACT-Bench dataset. To reproduce the 
 huggingface-cli download --repo-type dataset turing-motors/ACT-Bench act_bench.jsonl --local-dir < /path/to >
 ```
 
-### Generation settings used in the paper
+### Generation settings with Video Refiner
 
 ```shell
 python generate.py \
@@ -65,4 +71,30 @@ python generate.py \
 --annotation_file "/path/to/act_bench.jsonl" \
 --output_dir ../generated_videos/Terra \
 --num_frames 47
+```
+
+### Speed up generation with vLLM
+
+To use vLLM implementation, you first need to save the pre-trained weights locally:
+
+```python
+from transformers import AutoModel
+
+
+AutoModel.from_pretrained("turing-motors/Terra", subfolder="world_model", trust_remote_code=True).save_pretrained("/path/to/save/directory")
+```
+
+Make sure to replace /path/to/save/directory with the directory where you want to store the model.
+
+After saving the model, you can run the vLLM implementation as follows. Be sure to set --world_model_name to the directory where you saved the model in the previous step:
+
+```shell
+python generate.py \
+--image_root "/path/to/nuscenes" \
+--annotation_file "/path/to/act_bench.jsonl" \
+--output_dir ../generated_videos/Terra \
+--decoding_method video_refiner \
+--num_frames 47 \
+--vllm_impl \
+--world_model_name /path/to/save/directory
 ```
