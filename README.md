@@ -24,15 +24,12 @@ source .venv/bin/activate
 
 ### 1. Generate Videos with World Model on the Benchmark Dataset
 
-**TODO**:
-
-- [ ] Create a script and provide instructions for generating videos using the benchmark dataset.
-- [ ] Add examples of how to prepare `instruction_trajs` for Terra and Vista.
-
 Note that `instruction_trajs` may not be directly usable as-is; you will need to tailor it to match the input format required by specific world models.
+For an example, see the prepare_action() function in Terra/generate.py.
+
 Once videos are generated, arrange them at `generated_videos/<your_model_name>/NUSCENES_ACTION_*.mp4`.
 The number of mp4 files in the directory must be the same as the number of samples in the benchmark dataset, which is 2286.
-We also provide a script to generate videos with Terra and Vista models, see [Generate Videos with Terra](#generate-videos-with-terra).
+We also provide a script to generate videos with Terra and Vista models, see [Generate Videos with Terra](./Terra/README.md).
 
 ### 2. Compute Scores with ACT-Estimator
 
@@ -77,16 +74,12 @@ So, the scores in the paper can be reproduced by running the following command:
 
 Also, a notebook example is also provided to reproduce the numbers: [compute_score.ipynb](notebook/compute_score.ipynb).
 
-## Generate Videos with Terra
-
-This section describes how to generate videos with Terra model on the benchmark dataset.
-
 ## Citation
 
 If any parts of our paper and code help your research, please consider citing us and giving a star to our repository.
 
 ```bibtex
-@misc{arai2024actbenchactioncontrollableworld,
+@misc{arai2024actbench,
       title={ACT-Bench: Towards Action Controllable World Models for Autonomous Driving},
       author={Hidehisa Arai and Keishi Ishihara and Tsubasa Takahashi and Yu Yamaguchi},
       year={2024},
