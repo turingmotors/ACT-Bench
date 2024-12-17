@@ -174,7 +174,6 @@ def load_video_refiner(config_path: Path, weights_path: Path):
         del ckpt[key]
     missing, unexpected = video_refiner.load_state_dict(ckpt, strict=False)
     print(f"Missing keys: {missing}")
-    print(f"Unexpected keys: {unexpected}")
     return video_refiner
 
 
