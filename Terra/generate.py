@@ -62,7 +62,7 @@ def prepare_args() -> argparse.Namespace:
     parser.add_argument(
         "--video_refiner_weights",
         type=Path,
-        default="./checkpoints/refiner_model.pt"
+        default="./checkpoints/video_refiner/refiner_model.pt"
     )
     parser.add_argument(
         "--tokenizer_name",
