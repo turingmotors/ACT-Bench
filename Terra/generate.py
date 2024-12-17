@@ -71,6 +71,11 @@ def prepare_args() -> argparse.Namespace:
         help="Name of the tokenizer to use. This name corresponds to the name of subfolder in turing-motors/Terra huggingface repository."
     )
     parser.add_argument(
+        "--vllm_impl",
+        action="store_true",
+        help="Whether to use vLLM implementation for faster generation."
+    )
+    parser.add_argument(
         "--world_model_name",
         type=str,
         default="world_model",
@@ -155,7 +160,7 @@ def prepare_action(
             timestep.reshape(-1, 1)
         ], axis=1)
         actions.append(torch.tensor(action))
-    return torch.cat(actions, dim=0)
+    return actions
 
 
 def load_video_refiner(config_path: Path, weights_path: Path):
@@ -206,7 +211,8 @@ def generate_tokens_for_round(
     num_frames_for_round = min(N_FRAMES_PER_ROUND, num_frames - start_index)
     actions = prepare_action(
         trajs, PATH_START_ID, PATH_POINT_INTERVAL, N_ACTION_TOKENS, start_index, num_frames_for_round
-    ).unsqueeze(0).to(input_ids.device).float()
+    )
+    actions = torch.cat(actions, dim=0).unsqueeze(0).to(input_ids.device).float()
     num_generated_tokens = N_TOKENS_PER_FRAME * (num_frames_for_round - num_conditioning_frames)
     progress_bar = tqdm(total=num_generated_tokens, desc=f"Round {round_id + 1}")
     with torch.inference_mode(), torch.autocast(device_type="cuda"):
@@ -292,12 +298,79 @@ def video_refiner_decode(output_tokens: torch.Tensor, video_refiner, min_overlap
     return output_images
 
 
+def prepare_vllm_model(model_path: str, device: torch.device):
+    from vllm import LLM, ModelRegistry
+    from vllm_impl.modeling_llama_action import LlamaActionForCausalLM
+
+    ModelRegistry.register_model("LlamaActionForCausalLM", LlamaActionForCausalLM)
+    model = LLM(
+        model=model_path,
+        skip_tokenizer_init=True,
+        enforce_eager=True,
+        trust_remote_code=True,
+        max_num_seqs=5,
+        device=device,
+        gpu_memory_utilization=0.5,
+    )
+    return model
+
+
+def generate_with_vllm_model_for_round(
+    round_id: int, 
+    model,
+    trajs: list[list[list[float]]], 
+    input_ids: torch.Tensor, 
+    num_overlapping_frames: int, 
+    num_frames: int,
+    num_conditioning_frames: int,
+    generation_configs: dict,
+):
+    import logging
+    from vllm import SamplingParams
+
+    logging.getLogger("vllm").setLevel(logging.ERROR)
+
+    start_index = round_id * (N_FRAMES_PER_ROUND - num_overlapping_frames)
+    num_frames_for_round = min(N_FRAMES_PER_ROUND, num_frames - start_index)
+    actions_list = prepare_action(
+        trajs, PATH_START_ID, PATH_POINT_INTERVAL, N_ACTION_TOKENS, start_index, num_frames_for_round
+    )
+    prompt = torch.ones((N_TOKENS_PER_FRAME + N_ACTION_TOKENS) * num_conditioning_frames, dtype=torch.long) * -3
+    for i in range(num_conditioning_frames):
+        prompt[i * (N_TOKENS_PER_FRAME + N_ACTION_TOKENS):i * (N_TOKENS_PER_FRAME + N_ACTION_TOKENS) + N_TOKENS_PER_FRAME] = \
+            input_ids[0, i * N_TOKENS_PER_FRAME:(i + 1) * N_TOKENS_PER_FRAME]
+    actions = torch.cat(actions_list[:num_conditioning_frames], dim=0)
+    inputs = [{"prompt_token_ids": prompt.tolist(), "multi_modal_data": {"actions": actions}}]
+
+    sampling_params = SamplingParams(
+        detokenize=False,
+        max_tokens=N_TOKENS_PER_FRAME,
+        stop_token_ids=None,
+        **generation_configs
+    )
+
+    all_outputs = []
+    for step in tqdm(range(num_frames_for_round - num_conditioning_frames), desc=f"Round {round_id + 1}"):
+        outputs = model.generate(inputs, sampling_params=sampling_params, use_tqdm=False)[0].outputs[0].token_ids
+        all_outputs.append(outputs)
+        prompt = torch.cat([prompt, torch.tensor(outputs), torch.ones(N_ACTION_TOKENS, dtype=torch.long) * -3])
+        actions = torch.cat([actions, actions_list[num_conditioning_frames + step]], dim=0)
+        inputs = [{"prompt_token_ids": prompt.tolist(), "multi_modal_data": {"actions": actions}}]
+    return torch.cat([
+        input_ids,
+        torch.tensor(all_outputs).view(-1).unsqueeze(0).to(input_ids.device)
+    ], dim=1)
+
+
 if __name__ == "__main__":
     args = prepare_args()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     tokenizer = AutoModel.from_pretrained("turing-motors/Terra", subfolder=args.tokenizer_name, trust_remote_code=True).to(device).eval()
-    model = AutoModel.from_pretrained("turing-motors/Terra", subfolder=args.world_model_name, trust_remote_code=True).to(device).eval()
+    if args.vllm_impl:
+        model = prepare_vllm_model(args.world_model_name, device)
+    else:
+        model = AutoModel.from_pretrained("turing-motors/Terra", subfolder=args.world_model_name, trust_remote_code=True).to(device).eval()
     if args.decoding_method == "video_refiner":
         video_refiner = load_video_refiner(args.video_refiner_config, args.video_refiner_weights).to(device).eval()
 
@@ -318,28 +391,44 @@ if __name__ == "__main__":
 
         all_outputs = []
         for round_id in range(num_rounds):
-            output_tokens = generate_tokens_for_round(
-                round_id, 
-                model,
-                sample["instruction_trajs"],
-                input_ids,
-                args.num_overlapping_frames,
-                args.num_frames,
-                num_conditioning_frames=len(file_path_list) if round_id == 0 else args.num_overlapping_frames,
-                generation_configs={
-                    "temperature": args.temperature,
-                    "top_k": args.top_k,
-                    "top_p": args.top_p,
-                    "penalty_alpha": args.penalty_alpha
-                }
-            )
+            if args.vllm_impl:
+                output_tokens = generate_with_vllm_model_for_round(
+                    round_id,
+                    model,
+                    sample["instruction_trajs"],
+                    input_ids,
+                    args.num_overlapping_frames,
+                    args.num_frames,
+                    num_conditioning_frames=len(file_path_list) if round_id == 0 else args.num_overlapping_frames,
+                    generation_configs={
+                        "temperature": args.temperature,
+                        "top_k": args.top_k if args.top_k is not None else -1,
+                        "top_p": args.top_p if args.top_p is not None else 1.0,
+                    }
+                )
+            else:
+                output_tokens = generate_tokens_for_round(
+                    round_id, 
+                    model,
+                    sample["instruction_trajs"],
+                    input_ids,
+                    args.num_overlapping_frames,
+                    args.num_frames,
+                    num_conditioning_frames=len(file_path_list) if round_id == 0 else args.num_overlapping_frames,
+                    generation_configs={
+                        "temperature": args.temperature,
+                        "top_k": args.top_k,
+                        "top_p": args.top_p,
+                        "penalty_alpha": args.penalty_alpha
+                    }
+                )
             if round_id == 0:
                 all_outputs.append(output_tokens[0])
             else:
                 all_outputs.append(output_tokens[0, args.num_overlapping_frames * N_TOKENS_PER_FRAME:])
             input_ids = output_tokens[:, -args.num_overlapping_frames * N_TOKENS_PER_FRAME:]
 
-        output_tokens = torch.cat(all_outputs)
+        output_tokens = torch.cat(all_outputs).to(device)
         output_tokens = output_tokens.view(-1, N_TOKENS_PER_FRAME)
         num_frames = output_tokens.size(0)
         print(f"number of frames: {num_frames}")
