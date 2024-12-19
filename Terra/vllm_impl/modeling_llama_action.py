@@ -312,3 +312,67 @@ class LlamaActionForCausalLM(nn.Module, SupportsMultiModal):
         loader.load_weights(
             self.maybe_remap_mistral(name, loaded_weight)
             for name, loaded_weight in weights)
+
+
+@MULTIMODAL_REGISTRY.register_input_mapper(data_type_key="actions")
+@MULTIMODAL_REGISTRY.register_max_multimodal_tokens("actions", get_max_action_tokens)
+@INPUT_REGISTRY.register_dummy_data(create_dummy_data)
+class LlamaActionV2ForCausalLM(LlamaActionForCausalLM):
+    def __init__(
+        self,
+        config,
+        multimodal_config: MultiModalConfig,
+        cache_config: Optional[CacheConfig] = None,
+        quant_config: Optional[QuantizationConfig] = None,
+    ) -> None:
+        super().__init__(config, multimodal_config, cache_config, quant_config)
+        self.action_projection = nn.Sequential(
+            nn.Linear(config.action_dim, config.hidden_size),
+            nn.ReLU(),
+            nn.Linear(config.hidden_size, config.hidden_size),
+            nn.ReLU(),
+            nn.Linear(config.hidden_size, config.hidden_size),
+        )
+
+    def forward(
+        self,
+        input_ids: torch.Tensor,
+        positions: torch.Tensor,
+        kv_caches: List[torch.Tensor],
+        attn_metadata: AttentionMetadata,
+        intermediate_tensors: Optional[IntermediateTensors] = None,
+        **kwargs: object,
+    ) -> Union[torch.Tensor, IntermediateTensors]:
+        """Forward pass for the model.
+        input_ids already accounts for the positions of the to-be-inserted action embeddings.
+    
+        action tokens are represetnted by -3.
+        example: [1287, 3342, ..., 6571, -3, ..., -3]
+        """
+        if intermediate_tensors is not None:
+            input_ids = None
+            inputs_embeds = None
+        else:
+            action_token_indices = (input_ids == -3).nonzero(as_tuple=True)[0]
+            image_token_indices = (input_ids > 0).nonzero(as_tuple=True)[0]
+
+            image_tokens = input_ids[image_token_indices]
+            image_token_embeddings = self.model.get_input_embeddings(image_tokens)
+
+            inputs_embeds = torch.zeros(
+                (input_ids.size(0), image_token_embeddings.size(1)), 
+                device=input_ids.device, dtype=image_token_embeddings.dtype
+            )
+            inputs_embeds[image_token_indices] = image_token_embeddings
+
+            actions = kwargs.pop("actions", None)
+            if actions is not None:
+                assert len(action_token_indices) == actions.size(0) * actions.size(1), "actions must have the same length as the number of action tokens"
+                dtype = self.action_projection[0].weight.dtype
+                actions = actions.to(dtype=dtype)
+                action_embeddings = self.action_projection(actions)
+                inputs_embeds[action_token_indices] = action_embeddings.view(-1, action_embeddings.size(-1))
+            input_ids = None
+            inputs_embeds += self.pos_embedding_spatio_temporal(positions)
+        hidden_states = self.model(input_ids, positions, kv_caches, attn_metadata, intermediate_tensors, inputs_embeds=inputs_embeds)
+        return hidden_states

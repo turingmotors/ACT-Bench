@@ -11,7 +11,7 @@ from einops import rearrange
 from omegaconf import OmegaConf
 from PIL import Image
 from torchvision.transforms import functional as F
-from transformers import AutoModel
+from transformers import AutoConfig, AutoModel
 from tqdm import tqdm
 
 from video_refiner.util import instantiate_from_config
@@ -28,6 +28,14 @@ N_ACTION_TOKENS = 6
 VIDEO_PREFIX = "NUSCENES_ACTION_"
 VIDEO_REFINER_HEIGHT = 384
 VIDEO_REFINER_WIDTH = 640
+WM_TOKENIZER_COMBINATION = {
+    "world_model": "lfq_tokenizer_B_256",
+    "world_model_v2": "lfq_tokenizer_B_256_ema",
+}
+WM_MODEL_CLS_NAME_MAPPING = {
+    "LlamaActionForCausalLM": "world_model",
+    "LlamaActionV2ForCausalLM": "world_model_v2",
+}
 
 
 def prepare_args() -> argparse.Namespace:
@@ -65,18 +73,11 @@ def prepare_args() -> argparse.Namespace:
         default="./checkpoints/video_refiner/refiner_model.pt"
     )
     parser.add_argument(
-        "--tokenizer_name",
-        type=str,
-        default="lfq_tokenizer_B_256",
-        help="Name of the tokenizer to use. This name corresponds to the name of subfolder in turing-motors/Terra huggingface repository."
-    )
-    parser.add_argument(
         "--vllm_impl",
         action="store_true",
         help="Whether to use vLLM implementation for faster generation."
     )
     parser.add_argument(
-
         "--world_model_name",
         type=str,
         default="world_model",
@@ -300,9 +301,10 @@ def video_refiner_decode(output_tokens: torch.Tensor, video_refiner, min_overlap
 
 def prepare_vllm_model(model_path: str, device: torch.device):
     from vllm import LLM, ModelRegistry
-    from vllm_impl.modeling_llama_action import LlamaActionForCausalLM
+    from vllm_impl.modeling_llama_action import LlamaActionForCausalLM, LlamaActionV2ForCausalLM
 
     ModelRegistry.register_model("LlamaActionForCausalLM", LlamaActionForCausalLM)
+    ModelRegistry.register_model("LlamaActionV2ForCausalLM", LlamaActionV2ForCausalLM)
     model = LLM(
         model=model_path,
         skip_tokenizer_init=True,
@@ -366,11 +368,16 @@ if __name__ == "__main__":
     args = prepare_args()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    tokenizer = AutoModel.from_pretrained("turing-motors/Terra", subfolder=args.tokenizer_name, trust_remote_code=True).to(device).eval()
     if args.vllm_impl:
         model = prepare_vllm_model(args.world_model_name, device)
+        config = AutoConfig.from_pretrained(args.world_model_name, trust_remote_code=True)
+        model_cls_name = config.architectures[0]
     else:
         model = AutoModel.from_pretrained("turing-motors/Terra", subfolder=args.world_model_name, trust_remote_code=True).to(device).eval()
+        model_cls_name = model.__class__.__name__
+
+    tokenizer_name = WM_TOKENIZER_COMBINATION[WM_MODEL_CLS_NAME_MAPPING[model_cls_name]]
+    tokenizer = AutoModel.from_pretrained("turing-motors/Terra", subfolder=tokenizer_name, trust_remote_code=True).to(device).eval()
 
     if args.decoding_method == "video_refiner":
         video_refiner = load_video_refiner(args.video_refiner_config, args.video_refiner_weights).to(device).eval()
