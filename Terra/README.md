@@ -73,6 +73,19 @@ python generate.py \
 --num_frames 47
 ```
 
+### Generation settings with version 2 of the World Model
+
+We are continually enhancing the Terra model, and the latest version is `v2`. To use the `v2` model, you can execute the following command:
+
+```shell
+python generate.py \
+--image_root "/path/to/nuscenes" \
+--annotation_file "/path/to/act_bench.jsonl" \
+--output_dir ../generated_videos/Terra-v2 \
+--num_frames 47 \
+--world_model_name world_model_v2
+```
+
 ### Speed up generation with vLLM
 
 To use vLLM implementation, you first need to save the pre-trained weights locally:
@@ -82,11 +95,12 @@ from transformers import AutoModel
 
 
 AutoModel.from_pretrained("turing-motors/Terra", subfolder="world_model", trust_remote_code=True).save_pretrained("/path/to/save/directory")
+AutoModel.from_pretrained("turing-motors/Terra", subfolder="world_model_v2", trust_remote_code=True).save_pretrained("/path/to/save/directory_v2")
 ```
 
-Make sure to replace /path/to/save/directory with the directory where you want to store the model.
+Make sure to replace `/path/to/save/directory` and `/path/to/save/directory_v2` with the directories where you want to store the models.
 
-After saving the model, you can run the vLLM implementation as follows. Be sure to set --world_model_name to the directory where you saved the model in the previous step:
+After saving the models, you can run the vLLM implementation as follows. Be sure to set --world_model_name to the directory where you saved the model in the previous step:
 
 ```shell
 python generate.py \
