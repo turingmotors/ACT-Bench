@@ -381,6 +381,7 @@ if __name__ == "__main__":
 
     if args.decoding_method == "video_refiner":
         video_refiner = load_video_refiner(args.video_refiner_config, args.video_refiner_weights).to(device).eval()
+        video_refiner.token_decoder = AutoModel.from_pretrained("turing-motors/Terra", subfolder=tokenizer_name, trust_remote_code=True).to(device).eval()
 
     set_random_seed(args.seed)
 
