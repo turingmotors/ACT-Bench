@@ -70,6 +70,9 @@ So, the scores in the paper can be reproduced by running the following command:
 
 # For Vista
 ./scripts/compute_score_vista_paper.sh
+
+# For Terra v2
+./scripts/compute_score_terra_v2.sh
 ```
 
 Also, a notebook example is also provided to reproduce the numbers: [compute_score.ipynb](notebook/compute_score.ipynb).
