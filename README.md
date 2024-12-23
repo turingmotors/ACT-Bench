@@ -1,5 +1,11 @@
 # ACT-Bench
 
+[![ACT-Bench Report (arXiv)](https://img.shields.io/badge/arXiv-2412.05337-b31b1b)](https://arxiv.org/abs/2412.05337)
+[![web](https://img.shields.io/badge/project-website-blue)](https://turingmotors.github.io/actbench/)
+[![Benchmark Dataset](https://img.shields.io/badge/%F0%9F%A4%97_Dataset-ACT_Bench-blue)](https://huggingface.co/datasets/turing-motors/ACT-Bench)
+[![ACT-Estimator](https://img.shields.io/badge/%F0%9F%A4%97_Model-ACT_Estimator-blue)](https://huggingface.co/turing-motors/ACT-Estimator)
+[![Terra](https://img.shields.io/badge/%F0%9F%A4%97_Baseline-Terra-orange)](https://huggingface.co/turing-motors/Terra)
+
 ACT-Bench is a dedicated framework for quantitatively evaluating the action controllability of world models for autonomous driving. It focuses on measuring how well a world model can generate driving scenes conditioned on specified trajectories.
 
 ![overview](assets/overview.png)
